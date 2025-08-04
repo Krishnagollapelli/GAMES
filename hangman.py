@@ -1,55 +1,58 @@
+# hangman_app.py
 
 import streamlit as st
 import random
 import ascii_art
 
-# Word pool
+# Word list
 words_list = ["KRISHNA", "ASHA", "HEMA", "HARIKA"]
 
-# Game initializer
+# Initialize game
 def init_game():
     st.session_state.secret_word = random.choice(words_list)
     st.session_state.blank = ["_" for _ in st.session_state.secret_word]
     st.session_state.guessed_letters = []
     st.session_state.lives = 6
     st.session_state.game_over = False
-    st.session_state.message = ""
     st.session_state.win = False
+    st.session_state.message = ""
 
-# Initialize session
+# Setup session state
 if "secret_word" not in st.session_state:
     init_game()
 
-# UI
+# Title and Logo
 st.title("🕹️ Hangman Game")
-st.text(ascii_art.hangman_logo)
+st.code(ascii_art.hangman_logo)
 
-# Game Board
-st.markdown(f"### Word: {' '.join(st.session_state.blank)}")
-st.markdown(ascii_art.hangman_stages[6 - st.session_state.lives])
-st.markdown(f"**Lives Remaining:** {st.session_state.lives}")
+# Display current game state
+st.subheader(f"Word: {' '.join(st.session_state.blank)}")
+st.code(ascii_art.hangman_stages[6 - st.session_state.lives])
+st.markdown(f"**Lives Left:** {st.session_state.lives}")
 st.markdown(f"**Guessed Letters:** {', '.join(st.session_state.guessed_letters)}")
-st.write(st.session_state.message)
+st.markdown(st.session_state.message)
 
-# Player Input
+# Game input logic
 if not st.session_state.game_over:
-    guess = st.text_input("Enter a letter:", max_chars=1).upper()
+    guess = st.text_input("Enter a letter:", key="input").upper()
 
-    if guess and guess.isalpha():
-        if guess in st.session_state.guessed_letters:
-            st.session_state.message = "⚠️ You've already guessed this letter."
+    if guess:
+        if not guess.isalpha() or len(guess) != 1:
+            st.session_state.message = "⚠️ Please enter a single alphabet letter."
+        elif guess in st.session_state.guessed_letters:
+            st.session_state.message = "⚠️ You've already guessed that letter!"
         else:
             st.session_state.guessed_letters.append(guess)
             if guess in st.session_state.secret_word:
-                for i, letter in enumerate(st.session_state.secret_word):
-                    if letter == guess:
-                        st.session_state.blank[i] = letter
+                for i, char in enumerate(st.session_state.secret_word):
+                    if char == guess:
+                        st.session_state.blank[i] = guess
                 st.session_state.message = "✅ Correct guess!"
             else:
                 st.session_state.lives -= 1
-                st.session_state.message = "❌ Wrong guess."
+                st.session_state.message = "❌ Wrong guess!"
 
-        # Win/Loss Check
+        # Check win or lose
         if "_" not in st.session_state.blank:
             st.session_state.game_over = True
             st.session_state.win = True
@@ -58,13 +61,13 @@ if not st.session_state.game_over:
             st.session_state.game_over = True
             st.session_state.win = False
 
-# Result
+# Show result if game over
 if st.session_state.game_over:
     if st.session_state.win:
-        st.success("🎉 You win!")
+        st.success("🎉 Congratulations, you won!")
     else:
-        st.error("💀 You lose!")
-        st.info(f"The word was: **{st.session_state.secret_word}**")
+        st.error("💀 You lost! Better luck next time.")
+        st.info(f"The correct word was: **{st.session_state.secret_word}**")
 
     if st.button("🔁 Play Again"):
         init_game()
